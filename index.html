@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JAYS Project Opportunity Finder PRO</title>
+<style>
+:root{
+ --orange:#f97316;--orange2:#ea580c;--dark:#172033;--dark2:#26344f;
+ --muted:#64748b;--line:#e2e8f0;--bg:#f4f7fb;--card:#fff;
+ --green:#16a34a;--blue:#2563eb;--red:#dc2626;--purple:#7c3aed;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--dark)}
+header{background:linear-gradient(135deg,var(--dark),var(--dark2));color:#fff;padding:20px 28px;display:flex;justify-content:space-between;align-items:center;gap:20px;position:sticky;top:0;z-index:20}
+header h1{margin:0;font-size:23px}.brand{font-weight:800;color:#fb923c}.wrap{max-width:1600px;margin:auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 5px 20px #0f172a0b;padding:16px;margin-bottom:15px}
+.nav{display:flex;gap:7px;flex-wrap:wrap;background:#fff;border-bottom:1px solid var(--line);padding:9px 18px;position:sticky;top:76px;z-index:15}
+.nav button{background:#f1f5f9;color:#334155}.nav button.active{background:var(--dark);color:#fff}
+textarea{width:100%;min-height:150px;border:1px solid #cbd5e1;border-radius:10px;padding:12px;font:13px Consolas,monospace;resize:vertical}
+button{border:0;border-radius:9px;padding:9px 12px;font-weight:700;cursor:pointer}
+.primary{background:var(--orange);color:#fff}.primary:hover{background:var(--orange2)}
+.secondary{background:#eef2f7;color:#172033}.green{background:var(--green);color:#fff}
+.blue{background:var(--blue);color:#fff}.danger{background:#fee2e2;color:#991b1b}
+.controls{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:9px;align-items:end}
+input,select{width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:9px;background:#fff}
+label{font-size:11px;font-weight:800;color:var(--muted);display:block;margin-bottom:4px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:15px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.stat b{display:block;font-size:21px}.stat span{font-size:11px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:15px}.actions{display:flex;gap:7px;flex-wrap:wrap}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:1450px;background:#fff}
+th,td{padding:9px;border-bottom:1px solid #edf1f5;text-align:left;font-size:12px;vertical-align:top}
+th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transform:uppercase;color:#475569}
+.badge{display:inline-block;padding:4px 7px;border-radius:999px;font-size:9px;font-weight:800;margin:1px}
+.waste{background:#dcfce7;color:#166534}.purchase{background:#dbeafe;color:#1d4ed8}.equipment{background:#fef3c7;color:#92400e}
+.other{background:#f1f5f9;color:#475569}.saved{background:#ede9fe;color:#6d28d9}
+.score{font-weight:900}.high{color:#15803d}.med{color:#b45309}.low{color:#64748b}
+.small{font-size:11px;color:var(--muted)}.empty{text-align:center;padding:35px;color:var(--muted)}
+.hidden{display:none!important}.click{cursor:pointer}.metric{font-size:27px;font-weight:900}
+.modal{position:fixed;inset:0;background:#0f172a99;display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal.show{display:flex}.modalbox{background:#fff;border-radius:16px;width:min(1050px,100%);max-height:90vh;overflow:auto;padding:20px}
+.detailgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.detail{background:#f8fafc;border-radius:9px;padding:9px}.detail b{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kan{background:#f8fafc;border:1px solid var(--line);border-radius:12px;padding:10px;min-height:130px}.kan h4{margin:0 0 8px}.opp{background:#fff;border:1px solid var(--line);border-radius:9px;padding:9px;margin-bottom:7px}
+.progress{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--orange)}
+@media(max-width:1100px){.controls{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){header{align-items:flex-start;flex-direction:column}.stats{grid-template-columns:repeat(2,1fr)}.detailgrid{grid-template-columns:1fr}.nav{top:0}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>JAYS Project Opportunity Finder <span class="badge orange">PRO</span></h1>
+    <div class="small" style="color:#cbd5e1">Project Lead • Procurement Opportunity • Mini CRM</div>
+  </div>
+  <div class="brand">JAYS TRADING AND BUSINESS SOLUTION</div>
+</header>
+
+<nav class="nav">
+  <button class="active" onclick="showSection('dashboard',this)">🏠 Dashboard</button>
+  <button onclick="showSection('projects',this)">🔎 Projects</button>
+  <button onclick="showSection('opportunities',this)">⭐ My Opportunities</button>
+  <button onclick="showSection('import',this)">📥 Import</button>
+  <button onclick="showSection('products',this)">📦 JAYS Products</button>
+  <button onclick="showSection('reports',this)">📊 Reports</button>
+  <button onclick="showSection('settings',this)">⚙️ Settings</button>
+</nav>
+
+<div class="wrap">
+
+<section id="dashboard">
+  <div class="stats">
+    <div class="stat"><b id="total">0</b><span>Total Projects</span></div>
+    <div class="stat"><b id="wasteCount">0</b><span>Waste Opportunities</span></div>
+    <div class="stat"><b id="purchaseCount">0</b><span>Purchase Opportunities</span></div>
+    <div class="stat"><b id="highCount">0</b><span>High Priority</span></div>
+    <div class="stat"><b id="savedCount">0</b><span>Saved Opportunities</span></div>
+    <div class="stat"><b id="value">₹0</b><span>Filtered Project Value</span></div>
+  </div>
+  <div class="grid2">
+    <section class="card">
+      <h3>🎯 Opportunity Overview</h3>
+      <div id="overview"></div>
+    </section>
+    <section class="card">
+      <h3>📍 District Distribution</h3>
+      <div id="districtChart"></div>
+    </section>
+  </div>
+  <section class="card">
+    <h3>🔥 Top Opportunities</h3>
+    <div id="topOpps" class="grid2"></div>
+  </section>
+</section>
+
+<section id="projects" class="hidden">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+      <div><h3 style="margin:0">🔎 Project Search & Filters</h3><span class="small">Combine filters: District + Local Body + Category + Score + Status.</span></div>
+      <button class="secondary" onclick="resetFilters()">Reset Filters</button>
+    </div>
+    <div class="controls" style="margin-top:12px">
+      <div><label>Search all project data</label><input id="search" placeholder="e.g. waste bins malappuram panchayat" oninput="render()"></div>
+      <div><label>Category</label><select id="type" onchange="render()"><option value="ALL">All categories</option><option value="WASTE">Waste Management</option><option value="PURCHASE">Purchase</option><option value="EQUIPMENT">Equipment / Supplies</option><option value="OTHER">Other Potential</option></select></div>
+      <div><label>District</label><select id="district" onchange="populateLocalBodies();render()"><option value="">All districts</option></select></div>
+      <div><label>Local Body</label><select id="localbody" onchange="render()"><option value="">All Local Bodies</option></select></div>
+      <div><label>Minimum score</label><select id="minscore" onchange="render()"><option value="0">All</option><option value="40">40+</option><option value="60">60+</option><option value="80">80+</option><option value="90">90+</option></select></div>
+      <button class="green" onclick="exportCSV()">Export CSV</button>
+    </div>
+    <div class="controls" style="margin-top:9px;grid-template-columns:1fr 1fr 1fr 1fr auto">
+      <div><label>Status</label><select id="projectStatus" onchange="render()"><option value="">All Status</option><option>New</option><option>Researching</option><option>Contacted</option><option>Interested</option><option>Quotation</option><option>Submitted</option><option>Won</option><option>Lost</option></select></div>
+      <div><label>From Date</label><input id="fromDate" type="date" onchange="render()"></div>
+      <div><label>To Date</label><input id="toDate" type="date" onchange="render()"></div>
+      <div><label>Quick Date</label><select onchange="quickDate(this.value)"><option value="">Select</option><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="30">Last 30 Days</option></select></div>
+      <button class="secondary" onclick="resetFilters()">Clear</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px">
+      <h3 style="margin:0">Matching Projects</h3><span id="shown" class="small">0 results</span>
+    </div>
+    <div class="tablewrap"><table><thead><tr>
+      <th>View</th><th>Score</th><th>Opportunity</th><th>Project No</th><th>Project Name</th><th>Local Body</th><th>District</th><th>Sector</th><th>Sub Sector</th><th>Status</th><th>Fund Total</th><th>Balance</th><th>Matched Keywords</th>
+    </tr></thead><tbody id="tbody"></tbody></table></div>
+  </section>
+</section>
+
+<section id="opportunities" class="hidden">
+  <section class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h3 style="margin:0">⭐ My Opportunities</h3><span class="small">Saved projects become your procurement lead pipeline.</span></div>
+      <button class="blue" onclick="exportOpportunities()">Export Opportunities</button>
+    </div>
+    <div class="kanban" id="kanban" style="margin-top:12px"></div>
+  </section>
+</section>
+
+<section id="import" class="hidden">
+  <section class="card">
+    <h3 style="margin-top:0">📥 Import Project Data</h3>
+    <p class="small">Excel → select headings + rows → Copy → Paste. Existing projects are checked using Project No + Local Body.</p>
+    <textarea id="paste" placeholder="Paste Excel tab-separated data here..."></textarea>
+    <div class="actions" style="margin-top:10px">
+      <button class="primary" onclick="processData()">Find Opportunities</button>
+      <button class="green" onclick="saveData()">SAVE DATABASE</button>
+      <button class="secondary" onclick="loadSavedData()">Load Saved Data</button>
+      <button class="secondary" onclick="loadSample()">Load Sample</button>
+      <button class="secondary" onclick="clearAll()">Clear</button>
+      <button class="secondary" onclick="deleteSavedData()">Delete Saved Data</button>
+    </div>
+    <div id="msg" class="small" style="margin-top:8px"></div>
+    <div id="savedInfo" class="small" style="margin-top:4px"></div>
+  </section>
+  <section class="card">
+    <h3>🧾 Import History</h3>
+    <div class="tablewrap"><table style="min-width:700px"><thead><tr><th>Date</th><th>Source</th><th>Records</th><th>New</th><th>Updated</th><th>Duplicates</th></tr></thead><tbody id="history"></tbody></table></div>
+  </section>
+</section>
+
+<section id="products" class="hidden">
+  <section class="card">
+    <h3>📦 JAYS Product Match</h3>
+    <p class="small">Maintain simple product/category mappings. Matching projects automatically show potential JAYS products.</p>
+    <div class="controls" style="grid-template-columns:2fr 2fr auto">
+      <div><label>Product Name</label><input id="productName" placeholder="e.g. Twin Waste Bin"></div>
+      <div><label>Keywords / Category</label><input id="productKeywords" placeholder="bin, waste, segregation"></div>
+      <button class="green" onclick="addProduct()">Add Product</button>
+    </div>
+    <div id="productList" style="margin-top:12px"></div>
+  </section>
+</section>
+
+<section id="reports" class="hidden">
+  <section class="grid2">
+    <div class="card"><h3>Projects by Category</h3><div id="catReport"></div></div>
+    <div class="card"><h3>Projects by Status</h3><div id="statusReport"></div></div>
+  </section>
+</section>
+
+<section id="settings" class="hidden">
+  <section class="card">
+    <h3>⚙️ Database & Backup</h3>
+    <div class="actions">
+      <button class="green" onclick="backupJSON()">Download JSON Backup</button>
+      <label class="secondary" style="display:inline-flex;align-items:center;cursor:pointer;padding:9px 12px;border-radius:9px">
+        Restore JSON <input type="file" accept=".json" onchange="restoreJSON(this)" style="display:none">
+      </label>
+      <button class="secondary" onclick="exportCSV()">Export Current CSV</button>
+    </div>
+    <hr>
+    <h3>Matching Categories</h3>
+    <div class="small">Waste Management • Waste Bins • Composting • Collection & Transportation • Cleaning & Sanitation • HKS / Haritha Karma Sena • Open Gym • Anganwadi • Furniture • Computer / IT • Water Systems • Safety Equipment • General Procurement • Other Potential Purchases</div>
+  </section>
+</section>
+
+</div>
+
+<div id="loginOverlay" class="modal show" style="z-index:2000"><div class="modalbox" style="max-width:420px"><h2>🔐 JAYS Opportunity Finder</h2><p class="small">Sign in with your JAYS Supabase account.</p><input id="loginEmail" type="email" placeholder="Email" style="width:100%;margin:7px 0"><input id="loginPassword" type="password" placeholder="Password" style="width:100%;margin:7px 0"><button class="green" style="width:100%;margin-top:8px" onclick="signIn()">Sign In</button><div id="loginMsg" class="small" style="margin-top:10px"></div></div></div>
+<div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
+ <div class="modalbox">
+   <div style="display:flex;justify-content:space-between;gap:10px">
+     <h2 id="modalTitle" style="margin-top:0">Project Details</h2>
+     <button class="secondary" onclick="closeModal()">✕</button>
+   </div>
+   <div id="modalBody"></div>
+ </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://ufpaxvflwaqesdueqiob.supabase.co";
+const SUPABASE_KEY="sb_publishable_wcFe5caMkBlV-BcaZRgt7Q_YRdXAanu";
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let rows=[], filtered=[], opportunities={}, products=[], history=[], currentUser=null;
+
+
+const wasteWords=["waste","solid waste","biodegradable","non-biodegradable","garbage","sanitation","compost","composting","haritha","haritha karma","harithakarmasena","hks","waste bin","waste bins","disposal","segregat","collection","processing","recycling","recycle","organic waste","bio bin","napkin","bottle booth","waste management","ശുചിത്വ","മാലിന്യ","ജൈവമാലിന്യ","അജൈവ","ഹരിതകർമ്മ","കമ്പോസ്റ്റ്","ബിൻ","ബിന്നുകൾ","പാഴ്വസ്തു","പാഴ്‌വസ്തു"];
+const purchaseWords=["purchase","purchasing","procurement","supply","supplying","buy","buying","provided","distribution","materials","consumables","utensils","furniture","computer","laptop","printer","tank","uniform","medicine","medicines","vehicle","tools","net","equipment","ഉപകരണ","വാങ്ങ","വിതരണം","സാമഗ്രി","പാത്ര","ഫർണിച്ചർ","കമ്പ്യൂട്ടർ"];
+const equipWords=["equipment","equipments","machine","machinery","unit","bin","bins","tank","motor","tools","furniture","computer","printer","projector","laptop","vehicle","compost unit","ഉപകരണ","യൂണിറ്റ്","മെഷീൻ","ബിൻ","ടാങ്ക്"];
+
+const categoryNames={WASTE:"Waste Management",PURCHASE:"Purchase",EQUIPMENT:"Equipment / Supplies",OTHER:"Other Potential"};
+const statuses=["New","Researching","Contacted","Interested","Quotation","Submitted","Won","Lost"];
+
+function norm(v){return String(v??"").toLowerCase().replace(/\s+/g," ").trim()}
+function money(v){let n=Number(String(v??"").replace(/[,₹\s]/g,""));return isNaN(n)?0:n}
+function esc(x){return String(x??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+function classify(r){
+ let text=Object.values(r).map(norm).join(" ");
+ let hitsW=wasteWords.filter(x=>text.includes(norm(x)));
+ let hitsP=purchaseWords.filter(x=>text.includes(norm(x)));
+ let hitsE=equipWords.filter(x=>text.includes(norm(x)));
+ let score=Math.min(100,Math.min(70,hitsW.length*25)+Math.min(45,hitsP.length*12)+Math.min(30,hitsE.length*8)
+   +(norm(r["Sector"]).includes("waste")||norm(r["Sector"]).includes("മാലിന്യ")?35:0)
+   +(norm(r["Sub Sector"]).includes("waste")||norm(r["Sub Sector"]).includes("മാലിന്യ")?25:0));
+ let type=hitsW.length?"WASTE":(hitsP.length?"PURCHASE":(hitsE.length?"EQUIPMENT":"OTHER"));
+ return {score,type,hits:[...new Set([...hitsW,...hitsP,...hitsE])].slice(0,12)}
+}
+function keyOf(r){return norm((r["Project No"]||"")+"|"+(r["LB Name"]||""))}
+
+function parseTSV(txt){
+ let lines=txt.replace(/\r/g,"").split("\n").filter(x=>x.trim()); if(lines.length<2)return [];
+ let headers=lines[0].split("\t").map(x=>x.trim());
+ return lines.slice(1).map(line=>{let a=line.split("\t"),r={};headers.forEach((h,i)=>r[h]=a[i]??"");return r})
+ .filter(r=>Object.values(r).some(v=>String(v).trim()));
+}
+
+async function processData(){
+ const incoming=parseTSV(document.getElementById("paste").value).map(r=>({...r,...classify(r)}));
+ if(!incoming.length){document.getElementById("msg").textContent="No rows detected.";return}
+ const old=new Map(rows.map(r=>[keyOf(r),r]));
+ let added=0,updated=0,dupes=0;
+ incoming.forEach(r=>{
+   const k=keyOf(r);
+   if(old.has(k)){dupes++; old.set(k,{...old.get(k),...r});updated++}
+   else{old.set(k,r);added++}
+ });
+ rows=[...old.values()];
+ history.unshift({date:new Date().toISOString(),source:"Excel Import",records:incoming.length,newCount:added,updated,duplicates:dupes});
+ history=history.slice(0,30);await syncImportedRows(incoming, added, updated, dupes);
+ document.getElementById("msg").textContent=`Imported ${incoming.length} rows • ${added} new • ${updated} updated • ${dupes} duplicate keys handled.`;
+ populateDistricts();render();renderHistory();renderDashboard();renderOpportunities();
+}
+async function saveData(){
+ if(!rows.length)await processData(); if(!rows.length)return;
+ await syncImportedRows(rows,0,0,0);
+ updateSavedInfo();document.getElementById("msg").textContent=`Saved ${rows.length} projects successfully to Supabase.`;
+}
+async function loadSavedData(){
+ try{
+  const {data,error}=await supabaseClient.from("opportunity_projects").select("*").order("updated_at",{ascending:false});
+  if(error)throw error;
+  rows=(data||[]).map(dbToRow);
+  const {data:ops,error:oe}=await supabaseClient.from("opportunity_records").select("*, profiles(username,name)").eq("saved_by",currentUser.id);
+  if(oe)throw oe;
+  opportunities={};(ops||[]).forEach(o=>{const r=rows.find(x=>x._dbId===o.project_id);if(r)opportunities[keyOf(r)]={...o,staff:o.profiles?.name||o.profiles?.username||"",followup:o.followup_date||""};});
+  const {data:ps,error:pe}=await supabaseClient.from("opportunity_products").select("*").order("name"); if(pe)throw pe; products=ps||[];
+  const {data:hs,error:he}=await supabaseClient.from("opportunity_import_history").select("*").order("imported_at",{ascending:false}).limit(30); if(he)throw he; history=hs||[];
+  populateDistricts();render();renderDashboard();renderOpportunities();renderProducts();renderHistory();updateSavedInfo();
+  document.getElementById("msg").textContent=`Loaded ${rows.length} projects from Supabase.`;
+ }catch(e){console.error(e);document.getElementById("msg").textContent="Supabase load failed: "+(e.message||e);}
+}
+function updateSavedInfo(){document.getElementById("savedInfo").textContent=currentUser?`Cloud database: Supabase • ${rows.length} projects`:`Cloud database: Sign in required`}
+async function syncImportedRows(incoming){
+ if(!currentUser)throw new Error("Please sign in first.");
+ for(const r of incoming){
+  const payload=rowToDb(r);
+  const {data,error}=await supabaseClient.from("opportunity_projects").upsert(payload,{onConflict:"project_no,lb_name"}).select().single();
+  if(error)throw error;
+  r._dbId=data.id;
+ }
+ const source="Excel Import";
+ const newCount=arguments[1]||0, updatedCount=arguments[2]||0, duplicateCount=arguments[3]||0;
+ const {error:he}=await supabaseClient.from("opportunity_import_history").insert({source,records:incoming.length,new_count:newCount,updated_count:updatedCount,duplicate_count:duplicateCount,imported_by:currentUser.id});
+ if(he)throw he;
+ await loadSavedData();
+}
+function rowToDb(r){return {project_no:String(r["Project No"]||""),project_name_eng:r["Project Name Eng"]||null,project_name_mal:r["Project Name Mal"]||null,lb_name:r["LB Name"]||null,lb_type:r["LB Type"]||null,district:r["District"]||null,sector:r["Sector"]||null,sub_sector:r["Sub Sector"]||null,source_status:r["Status"]||null,fund_total:money(r["FundTotal"]),expenditure:money(r["Expenditure"]),balance:money(r["Balance"]),project_date:r["Project Date"]||null,closing_date:r["Closing Date"]||null,opportunity_score:Number(r.score||0),opportunity_type:r.type||"OTHER",matched_keywords:r.hits||[],raw_data:r,created_by:currentUser?.id||null};}
+function dbToRow(d){const r={...(d.raw_data||{}),"Project No":d.project_no,"Project Name Eng":d.project_name_eng,"Project Name Mal":d.project_name_mal,"LB Name":d.lb_name,"LB Type":d.lb_type,"District":d.district,"Sector":d.sector,"Sub Sector":d.sub_sector,"Status":d.source_status,"FundTotal":d.fund_total,"Expenditure":d.expenditure,"Balance":d.balance,"Project Date":d.project_date,"Closing Date":d.closing_date,score:d.opportunity_score,type:d.opportunity_type,hits:d.matched_keywords||[]};r._dbId=d.id;return r;}
+
+function populateDistricts(){
+ const d=[...new Set(rows.map(r=>r["District"]).filter(Boolean))].sort();
+ const sel=document.getElementById("district"),cur=sel.value;
+ sel.innerHTML='<option value="">All districts</option>'+d.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+ sel.value=d.includes(cur)?cur:"";populateLocalBodies();
+}
+function populateLocalBodies(){
+ const dist=document.getElementById("district").value;
+ const lbs=[...new Set(rows.filter(r=>!dist||r["District"]===dist).map(r=>r["LB Name"]).filter(Boolean))].sort();
+ const sel=document.getElementById("localbody"),cur=sel.value;
+ sel.innerHTML='<option value="">All Local Bodies</option>'+lbs.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join("");
+ sel.value=lbs.includes(cur)?cur:"";
+}
+
+function render(){
+ const q=norm(document.getElementById("search").value),typ=document.getElementById("type").value;
+ const dist=document.getElementById("district").value,lb=document.getElementById("localbody").value,ms=Number(document.getElementById("minscore").value);
+ const ps=document.getElementById("projectStatus").value,fd=document.getElementById("fromDate").value,td=document.getElementById("toDate").value;
+ filtered=rows.filter(r=>{
+   const blob=norm(Object.entries(r).filter(([k])=>!["score","type","hits"].includes(k)).map(([,v])=>v).join(" "));
+   const op=opportunities[keyOf(r)]||{};
+   const st=op.status||"New";
+   const dateVal=r["Project Date"]||r["Date"]||r["Created Date"]||r["Closing Date"]||"";
+   return r.score>=ms&&(typ==="ALL"||r.type===typ)&&(!dist||r["District"]===dist)&&(!lb||r["LB Name"]===lb)
+    &&(!q||blob.includes(q))&&(!ps||st===ps)&&(!fd||String(dateVal).slice(0,10)>=fd)&&(!td||String(dateVal).slice(0,10)<=td);
+ }).sort((a,b)=>b.score-a.score);
+ document.getElementById("total").textContent=rows.length;
+ document.getElementById("wasteCount").textContent=rows.filter(r=>r.type==="WASTE").length;
+ document.getElementById("purchaseCount").textContent=rows.filter(r=>r.type==="PURCHASE").length;
+ document.getElementById("highCount").textContent=rows.filter(r=>r.score>=80).length;
+ document.getElementById("savedCount").textContent=Object.keys(opportunities).length;
+ document.getElementById("value").textContent="₹"+filtered.reduce((s,r)=>s+money(r["FundTotal"]),0).toLocaleString("en-IN");
+ document.getElementById("shown").textContent=filtered.length+" results";
+ document.getElementById("tbody").innerHTML=filtered.length?filtered.map((r,i)=>{
+   const op=opportunities[keyOf(r)]||{},cls=r.score>=80?"high":r.score>=50?"med":"low";
+   const name=r["Project Name Eng"]&&r["Project Name Mal"]?`${esc(r["Project Name Eng"])}<br><span class="small">${esc(r["Project Name Mal"])}</span>`:esc(r["Project Name Eng"]||r["Project Name Mal"]||"");
+   return `<tr><td><button class="secondary" onclick="viewProject(${rows.indexOf(r)})">👁 View</button></td>
+   <td class="score ${cls}">${r.score}%</td><td><span class="badge ${r.type.toLowerCase()}">${categoryNames[r.type]}</span>${op.status?`<span class="badge saved">${esc(op.status)}</span>`:""}</td>
+   <td>${esc(r["Project No"])}</td><td>${name}</td><td>${esc(r["LB Name"])}</td><td>${esc(r["District"])}</td><td>${esc(r["Sector"])}</td><td>${esc(r["Sub Sector"])}</td><td>${esc(op.status||"New")}</td>
+   <td>₹${money(r["FundTotal"]).toLocaleString("en-IN")}</td><td>₹${money(r["Balance"]).toLocaleString("en-IN")}</td>
+   <td>${r.hits.map(x=>`<span class="badge other">${esc(x)}</span>`).join(" ")}</td></tr>`
+ }).join(""):'<tr><td colspan="13" class="empty">No matching projects found.</td></tr>';
+}
+function resetFilters(){["search","fromDate","toDate"].forEach(id=>document.getElementById(id).value="");document.getElementById("type").value="ALL";document.getElementById("district").value="";document.getElementById("localbody").value="";document.getElementById("minscore").value="0";document.getElementById("projectStatus").value="";populateDistricts();render()}
+function quickDate(v){
+ const now=new Date(),to=new Date(now),from=new Date(now);to.setHours(23,59,59,999);
+ if(v==="today"){}
+ else if(v==="week"){from.setDate(now.getDate()-now.getDay())}
+ else if(v==="month"){from.setDate(1)}
+ else if(v==="30"){from.setDate(now.getDate()-29)}
+ else {document.getElementById("fromDate").value="";document.getElementById("toDate").value="";render();return}
+ document.getElementById("fromDate").value=from.toISOString().slice(0,10);document.getElementById("toDate").value=to.toISOString().slice(0,10);render()
+}
+
+function viewProject(index){
+ const r=rows[index],k=keyOf(r),op=opportunities[k]||{};
+ const productMatches=products.filter(p=>p.keywords.split(",").some(x=>norm(Object.values(r).join(" ")).includes(norm(x)))).map(p=>p.name);
+ const fields=["Project No","Project Name Eng","Project Name Mal","LB Name","LB Type","District","Sector","Sub Sector","Status","FundTotal","Expenditure","Balance","Project Date","Closing Date"];
+ document.getElementById("modalTitle").textContent=r["Project Name Eng"]||"Project Details";
+ document.getElementById("modalBody").innerHTML=`
+ <div class="detailgrid">${fields.filter(f=>r[f]!==undefined).map(f=>`<div class="detail"><b>${esc(f)}</b>${esc(r[f])}</div>`).join("")}
+ <div class="detail"><b>Opportunity Score</b><strong>${r.score}%</strong></div><div class="detail"><b>Category</b>${categoryNames[r.type]}</div><div class="detail"><b>Matched Keywords</b>${r.hits.map(x=>`<span class="badge other">${esc(x)}</span>`).join(" ")}</div></div>
+ <hr><h3>⭐ My Opportunity</h3>
+ <div class="controls" style="grid-template-columns:1fr 1fr 1fr">
+   <div><label>Priority</label><select id="opPriority"><option ${op.priority==="Low"?"selected":""}>Low</option><option ${op.priority==="Medium"?"selected":""}>Medium</option><option ${op.priority==="High"?"selected":""}>High</option></select></div>
+   <div><label>Status</label><select id="opStatus">${statuses.map(s=>`<option ${op.status===s?"selected":""}>${s}</option>`).join("")}</select></div>
+   <div><label>Follow-up Date</label><input id="opDate" type="date" value="${esc(op.followup||"")}"></div>
+ </div>
+ <div style="margin-top:9px"><label>Assigned Staff</label><input id="opStaff" value="${esc(op.staff||"")}" placeholder="Staff name"></div>
+ <div style="margin-top:9px"><label>Notes</label><textarea id="opNotes" style="min-height:90px">${esc(op.notes||"")}</textarea></div>
+ <h4>📦 Potential JAYS Products</h4><div>${productMatches.length?productMatches.map(x=>`<span class="badge purchase">${esc(x)}</span>`).join(" "):'<span class="small">Add products in JAYS Products to enable product matching.</span>'}</div>
+ <div class="actions" style="margin-top:14px"><button class="green" onclick="saveOpportunity('${encodeURIComponent(k)}')">⭐ Save Opportunity</button><button class="danger" onclick="deleteOpportunity('${encodeURIComponent(k)}')">Remove from My Opportunities</button></div>`;
+ document.getElementById("modal").classList.add("show");
+}
+async function saveOpportunity(encoded){
+ const k=decodeURIComponent(encoded),r=rows.find(x=>keyOf(x)===k);if(!r||!currentUser)return;
+ const existing=opportunities[k]||{};
+ const payload={project_id:r._dbId,priority:document.getElementById("opPriority").value,status:document.getElementById("opStatus").value,followup_date:document.getElementById("opDate").value||null,notes:document.getElementById("opNotes").value,assigned_staff_id:null,contacted:!!document.getElementById("opContacted")?.checked,quotation_required:!!document.getElementById("opQuotation")?.checked,saved_by:currentUser.id};
+ const staffName=document.getElementById("opStaff").value.trim();
+ if(staffName){const {data}=await supabaseClient.from("profiles").select("id").or(`name.ilike.%${staffName}%,username.ilike.%${staffName}%`).limit(1);if(data?.[0])payload.assigned_staff_id=data[0].id;}
+ const {error}=await supabaseClient.from("opportunity_records").upsert(payload,{onConflict:"project_id,saved_by"});if(error){alert(error.message);return;}
+ await loadSavedData();closeModal();render();renderDashboard();renderOpportunities();
+}
+async function deleteOpportunity(encoded){const k=decodeURIComponent(encoded),r=rows.find(x=>keyOf(x)===k);if(!r||!currentUser)return;const {error}=await supabaseClient.from("opportunity_records").delete().eq("project_id",r._dbId).eq("saved_by",currentUser.id);if(error){alert(error.message);return;}delete opportunities[k];closeModal();await loadSavedData();render();renderDashboard();renderOpportunities()}
+
+function closeModal(){document.getElementById("modal").classList.remove("show")}
+
+function showLogin(){document.getElementById("loginOverlay").classList.add("show");document.getElementById("loginMsg").textContent="Please sign in to use the cloud database."}
+function hideLogin(){document.getElementById("loginOverlay").classList.remove("show")}
+async function signIn(){const email=document.getElementById("loginEmail").value.trim(),password=document.getElementById("loginPassword").value;if(!email||!password)return;document.getElementById("loginMsg").textContent="Signing in...";const {error}=await supabaseClient.auth.signInWithPassword({email,password});document.getElementById("loginMsg").textContent=error?error.message:"Signed in."}
+function showSection(id,btn){document.querySelectorAll(".wrap>section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));btn.classList.add("active");if(id==="dashboard")renderDashboard();if(id==="opportunities")renderOpportunities();if(id==="reports")renderReports();if(id==="products")renderProducts();if(id==="import")renderHistory()}
+
+function renderDashboard(){
+ const counts={WASTE:0,PURCHASE:0,EQUIPMENT:0,OTHER:0};rows.forEach(r=>counts[r.type]++);
+ document.getElementById("overview").innerHTML=Object.entries(counts).map(([k,v])=>`<div style="margin:9px 0"><div style="display:flex;justify-content:space-between"><b>${categoryNames[k]}</b><span>${v}</span></div><div class="progress"><i style="width:${rows.length?Math.round(v/rows.length*100):0}%"></i></div></div>`).join("");
+ const ds={};rows.forEach(r=>{const d=r["District"]||"Unknown";ds[d]=(ds[d]||0)+1});const top=Object.entries(ds).sort((a,b)=>b[1]-a[1]).slice(0,8);
+ document.getElementById("districtChart").innerHTML=top.length?top.map(([d,v])=>`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between"><span>${esc(d)}</span><b>${v}</b></div><div class="progress"><i style="width:${rows.length?Math.round(v/rows.length*100):0}%"></i></div></div>`).join(""):"<span class='small'>Import data to see analytics.</span>";
+ const topOpp=[...rows].sort((a,b)=>b.score-a.score).slice(0,6);
+ document.getElementById("topOpps").innerHTML=topOpp.map(r=>`<div class="opp"><b>${esc(r["Project Name Eng"]||r["Project Name Mal"]||"Unnamed Project")}</b><div class="small">${esc(r["LB Name"])} • ${esc(r["District"])}</div><div style="margin-top:7px"><span class="badge waste">${r.score}% match</span><span class="badge purchase">${categoryNames[r.type]}</span><button class="secondary" style="float:right" onclick="viewProject(${rows.indexOf(r)})">View</button></div></div>`).join("")||"<span class='small'>No projects yet.</span>";
+}
+function renderOpportunities(){
+ const groups={New:[],Researching:[],Contacted:[],Interested:[],Quotation:[],Submitted:[],Won:[],Lost:[]};
+ Object.entries(opportunities).forEach(([k,o])=>{const r=rows.find(x=>keyOf(x)===k);if(r)groups[o.status||"New"].push({r,o})});
+ document.getElementById("kanban").innerHTML=Object.entries(groups).map(([s,list])=>`<div class="kan"><h4>${s} <span class="small">(${list.length})</span></h4>${list.map(({r,o})=>`<div class="opp"><b>${esc(r["Project Name Eng"]||"Unnamed")}</b><div class="small">${esc(r["LB Name"])} • ${r.score}%</div>${o.followup?`<div class="small">📅 ${esc(o.followup)}</div>`:""}<button class="secondary" style="margin-top:6px" onclick="viewProject(${rows.indexOf(r)})">Open</button></div>`).join("")}</div>`).join("");
+}
+async function addProduct(){const name=document.getElementById("productName").value.trim(),keywords=document.getElementById("productKeywords").value.trim();if(!name||!keywords||!currentUser)return;const {error}=await supabaseClient.from("opportunity_products").insert({name,keywords,created_by:currentUser.id});if(error){alert(error.message);return;}document.getElementById("productName").value="";document.getElementById("productKeywords").value="";await loadSavedData();renderProducts()}
+function renderProducts(){document.getElementById("productList").innerHTML=products.length?products.map((p,i)=>`<div class="opp"><b>${esc(p.name)}</b><div class="small">${esc(p.keywords)}</div><button class="danger" style="margin-top:5px" onclick="deleteProduct('${p.id||''}')">Delete</button></div>`).join(""):"<div class='small'>No products added yet.</div>"}
+async function deleteProduct(id){if(!id||!currentUser)return;const {error}=await supabaseClient.from("opportunity_products").delete().eq("id",id);if(error){alert(error.message);return;}await loadSavedData();renderProducts()}
+
+function renderHistory(){document.getElementById("history").innerHTML=history.map(h=>`<tr><td>${new Date(h.date).toLocaleString()}</td><td>${esc(h.source)}</td><td>${h.records}</td><td>${h.newCount}</td><td>${h.updated}</td><td>${h.duplicates}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No imports yet.</td></tr>'}
+function renderReports(){
+ const make=(obj)=>Object.entries(obj).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="margin:8px 0;display:flex;justify-content:space-between"><span>${esc(k)}</span><b>${v}</b></div>`).join("");
+ const c={};rows.forEach(r=>c[categoryNames[r.type]]=(c[categoryNames[r.type]]||0)+1);
+ const s={};rows.forEach(r=>{const st=(opportunities[keyOf(r)]||{}).status||"New";s[st]=(s[st]||0)+1});
+ document.getElementById("catReport").innerHTML=make(c)||"No data";document.getElementById("statusReport").innerHTML=make(s)||"No data";
+}
+function exportCSV(){
+ if(!filtered.length)filtered=rows;
+ const cols=["score","type","Project No","Project Name Eng","Project Name Mal","LB Name","LB Type","District","Sector","Sub Sector","Status","FundTotal","Expenditure","Balance","hits"];
+ let out=[cols.join(",")];filtered.forEach(r=>out.push(cols.map(c=>`"${String(c==="hits"?r.hits.join("; "):(r[c]??"")).replace(/"/g,'""')}"`).join(",")));
+ downloadBlob(out.join("\n"),"JAYS_Project_Opportunities.csv","text/csv;charset=utf-8")
+}
+function exportOpportunities(){const arr=rows.filter(r=>opportunities[keyOf(r)]);filtered=arr;exportCSV()}
+function backupJSON(){downloadBlob(JSON.stringify({rows,opportunities,products,history,exportedAt:new Date().toISOString()},null,2),"JAYS_Project_Opportunity_Backup.json","application/json")}
+async function restoreJSON(input){const f=input.files[0];if(!f||!currentUser)return;const reader=new FileReader();reader.onload=async()=>{try{const x=JSON.parse(reader.result);if(Array.isArray(x.rows)&&x.rows.length){await syncImportedRows(x.rows,0,0,0)}alert("Backup imported into Supabase successfully.")}catch(e){alert("Invalid backup or import failed: "+e.message)}};reader.readAsText(f)}
+
+function downloadBlob(data,name,type){const blob=new Blob([data],{type}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function clearAll(){document.getElementById("paste").value="";rows=[];filtered=[];populateDistricts();render();renderDashboard();renderOpportunities()}
+async function loadSample(){
+ const sample=`Project No\tProject Name Eng\tProject Name Mal\tLB Name\tDistrict\tSector\tSub Sector\tStatus\tFundTotal\tBalance
+27\tProtective equipments to HKS\tഹരിത കർമ്മസേനയ്ക്ക് സുരക്ഷാ ഉപകരണങ്ങൾ\tSample Panchayat\tKozhikode\tSolid Waste Management\tProcessing\tApproved\t100000\t100000
+50\tExporting Non-Biodegradable Waste collected from Wards\tവാർഡുകളിൽ നിന്ന് ശേഖരിക്കുന്ന അജൈവ പാഴ്‌വസ്തുക്കൾ കയറ്റി അയക്കൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tDisposal\tApproved\t100000\t100000
+52\tSupplying of Ring compost unit for solid biodegradable waste management at houses\tവീടുകളിലെ ഖരജൈവമാലിന്യ സംസ്കരണത്തിന് റിംഗ് കമ്പോസ്റ്റ് യൂണിറ്റ് വാങ്ങി നൽകൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tProcessing\tApproved\t555500\t555500
+85\tPurchasing Kitchen Utensils for Anganvadies\tഅംഗൻവാടികൾക്ക് അടുക്കള പാത്രങ്ങൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tAnganwadies\tFacilities\tApproved\t90000\t90000
+100\tPurchase Disaster management Equipments\tദുരന്ത നിവാരണ ഉപകരണങ്ങൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tSocial Welfare\tSocial Security\tApproved\t100000\t100000
+336\tWASTE BINS FOR SEGREGATING WASTE AT THE COMMUNITY LEVEL\tകമ്മ്യൂണിറ്റി തലത്തിൽ മാലിന്യങ്ങൾ തരംതിരിക്കുന്നതിനുള്ള ബിന്നുകൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tCollection and Transport\tApproved\t300000\t300000`;
+ document.getElementById("paste").value=sample;processData()
+}
+async function initApp(){
+ const {data:{session}}=await supabaseClient.auth.getSession();currentUser=session?.user||null;
+ if(!currentUser){showLogin();return;}
+ hideLogin();await loadSavedData();
+}
+supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser)initApp();else showLogin();});
+initApp();
+</script>
+</body>
+</html>
