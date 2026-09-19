@@ -353,14 +353,19 @@ async function loadSavedData(){
 function updateSavedInfo(){document.getElementById("savedInfo").textContent=currentUser?`Cloud database: Supabase • ${rows.length} projects`:`Cloud database: Sign in required`}
 async function syncImportedRows(incoming){
  if(!currentUser)throw new Error("Please sign in first.");
- for(const r of incoming){
-  const payload=rowToDb(r);
-  const {data,error}=await supabaseClient.from("opportunity_projects").upsert(payload,{onConflict:"project_no,lb_name"}).select().single();
-  if(error)throw error;
-  r._dbId=data.id;
- }
+ if(!Array.isArray(incoming)||!incoming.length)return;
  const source="Excel Import";
  const newCount=arguments[1]||0, updatedCount=arguments[2]||0, duplicateCount=arguments[3]||0;
+ const CHUNK_SIZE=500;
+ for(let i=0;i<incoming.length;i+=CHUNK_SIZE){
+   const chunk=incoming.slice(i,i+CHUNK_SIZE);
+   const payload=chunk.map(rowToDb);
+   const {data,error}=await supabaseClient.from("opportunity_projects").upsert(payload,{onConflict:"project_no,lb_name"}).select("id,project_no,lb_name");
+   if(error)throw error;
+   const idByKey=new Map((data||[]).map(x=>[`${x.project_no}\u001f${x.lb_name||""}`,x.id]));
+   chunk.forEach(r=>{const id=idByKey.get(keyOf(r));if(id)r._dbId=id;});
+   showSaveStatus(`⏳ Saving project data to database…<br>${Math.min(i+chunk.length,incoming.length).toLocaleString()} / ${incoming.length.toLocaleString()} records processed`,'saving');
+ }
  const {error:he}=await supabaseClient.from("opportunity_import_history").insert({source,records:incoming.length,new_count:newCount,updated_count:updatedCount,duplicate_count:duplicateCount,imported_by:currentUser.id});
  if(he)throw he;
  await loadSavedData();
