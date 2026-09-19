@@ -45,6 +45,16 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
 .progress{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden}.progress i{display:block;height:100%;background:var(--orange)}
 @media(max-width:1100px){.controls{grid-template-columns:1fr 1fr}.stats{grid-template-columns:repeat(3,1fr)}.grid2{grid-template-columns:1fr}.kanban{grid-template-columns:1fr 1fr}}
 @media(max-width:700px){header{align-items:flex-start;flex-direction:column}.stats{grid-template-columns:repeat(2,1fr)}.detailgrid{grid-template-columns:1fr}.nav{top:0}}
+
+.save-status{display:none;margin-top:12px;padding:12px 14px;border-radius:10px;border:1px solid #bbf7d0;background:#f0fdf4;color:#166534;font-weight:600;line-height:1.5}
+.save-status.show{display:block}
+.save-status.error{border-color:#fecaca;background:#fef2f2;color:#991b1b}
+.save-status.saving{border-color:#bfdbfe;background:#eff6ff;color:#1d4ed8}
+.save-toast{position:fixed;right:22px;bottom:22px;z-index:5000;min-width:300px;max-width:460px;padding:14px 16px;border-radius:12px;box-shadow:0 12px 35px rgba(0,0,0,.18);background:#166534;color:#fff;font-weight:600;display:none}
+.save-toast.show{display:block;animation:saveToastIn .2s ease-out}
+.save-toast.error{background:#991b1b}
+.save-toast.saving{background:#1d4ed8}
+@keyframes saveToastIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 </style>
 </head>
 <body>
@@ -53,7 +63,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
     <h1>JAYS Project Opportunity Finder <span class="badge orange">PRO</span></h1>
     <div class="small" style="color:#cbd5e1">Project Lead • Procurement Opportunity • Mini CRM</div>
   </div>
-  <div style="display:flex;align-items:center;gap:10px"><div class="brand">JAYS TRADING AND BUSINESS SOLUTION</div><div id="userBadge" class="badge" style="background:#fff;color:#172033">Loading...</div><button class="secondary" onclick="signOut()">Logout</button></div>
+  <div class="brand">JAYS TRADING AND BUSINESS SOLUTION</div>
 </header>
 
 <nav class="nav">
@@ -63,7 +73,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
   <button onclick="showSection('import',this)">📥 Import</button>
   <button onclick="showSection('products',this)">📦 JAYS Products</button>
   <button onclick="showSection('reports',this)">📊 Reports</button>
-  <button data-permission="settings" onclick="showSection('settings',this)">⚙️ Settings</button><button data-permission="users" onclick="showSection('users',this)">👥 Users</button>
+  <button onclick="showSection('settings',this)">⚙️ Settings</button>
 </nav>
 
 <div class="wrap">
@@ -150,6 +160,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
       <button class="secondary" onclick="deleteSavedData()">Delete Saved Data</button>
     </div>
     <div id="msg" class="small" style="margin-top:8px"></div>
+    <div id="saveStatus" class="save-status" role="status" aria-live="polite"></div>
     <div id="savedInfo" class="small" style="margin-top:4px"></div>
   </section>
   <section class="card">
@@ -194,10 +205,10 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
   </section>
 </section>
 
-<section id="users" class="hidden" data-admin-only="true"><section class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div><h3 style="margin:0">👥 User Management</h3><span class="small">Create users, assign roles and control menu access.</span></div><button class="secondary" onclick="loadUsers()">Refresh</button></div></section><section class="grid2"><section class="card"><h3>➕ Create User</h3><div class="controls" style="grid-template-columns:1fr 1fr"><div><label>Full Name</label><input id="newUserName" placeholder="Staff name"></div><div><label>Username</label><input id="newUserUsername" placeholder="sales01"></div><div><label>Email</label><input id="newUserEmail" type="email" placeholder="user@company.com"></div><div><label>Password</label><input id="newUserPassword" type="password" placeholder="Minimum 6 characters"></div><div><label>Role</label><select id="newUserRole"><option value="User">User</option><option value="Admin">Administrator</option></select></div></div><h4>Menu Access</h4><div id="newUserPermissions" class="actions"></div><button class="green" style="margin-top:12px" onclick="createUser()">Create User</button><div id="userMsg" class="small" style="margin-top:10px"></div></section><section class="card"><h3>🔐 Permission Guide</h3><div class="small"><p><b>Administrator:</b> full access, including Users.</p><p><b>User:</b> access is limited to selected menus.</p><p>Permissions are stored in Supabase.</p></div></section></section><section class="card"><h3>Existing Users</h3><div class="tablewrap"><table style="min-width:900px"><thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Menu Access</th><th>Actions</th></tr></thead><tbody id="usersBody"></tbody></table></div></section></section>
 </div>
 
-<div id="loginOverlay" class="modal show" style="z-index:2000;background:linear-gradient(135deg,#0f172a,#1e293b)"><div class="modalbox" style="max-width:440px;padding:30px"><div style="text-align:center"><div style="font-size:46px">🎯</div><h2 style="margin:8px 0 4px">JAYS Opportunity Finder</h2><div class="small">Project Lead • Procurement Opportunity • Mini CRM</div></div><div style="margin-top:22px"><label>Email</label><input id="loginEmail" type="email" placeholder="Enter your email"></div><div style="margin-top:10px"><label>Password</label><input id="loginPassword" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')signIn()"></div><button class="green" style="width:100%;margin-top:16px;padding:12px" onclick="signIn()">🔐 Sign In</button><div id="loginMsg" class="small" style="margin-top:12px;text-align:center"></div><div style="margin-top:18px;text-align:center;font-size:11px;color:#94a3b8">Authorized JAYS users only</div></div></div>
+<div id="loginOverlay" class="modal show" style="z-index:2000"><div class="modalbox" style="max-width:420px"><h2>🔐 JAYS Opportunity Finder</h2><p class="small">Sign in with your JAYS Supabase account.</p><input id="loginEmail" type="email" placeholder="Email" style="width:100%;margin:7px 0"><input id="loginPassword" type="password" placeholder="Password" style="width:100%;margin:7px 0"><button class="green" style="width:100%;margin-top:8px" onclick="signIn()">Sign In</button><div id="loginMsg" class="small" style="margin-top:10px"></div></div></div>
+<div id="saveToast" class="save-toast" role="status" aria-live="polite"></div>
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
  <div class="modalbox">
    <div style="display:flex;justify-content:space-between;gap:10px">
@@ -213,10 +224,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
 const SUPABASE_URL="https://ufpaxvflwaqesdueqiob.supabase.co";
 const SUPABASE_KEY="sb_publishable_wcFe5caMkBlV-BcaZRgt7Q_YRdXAanu";
 const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-let rows=[], filtered=[], opportunities={}, products=[], history=[], currentUser=null, currentProfile=null, users=[];
-const MENU_PERMISSIONS={dashboard:"Dashboard",projects:"Projects",opportunities:"My Opportunities",import:"Import",products:"JAYS Products",reports:"Reports",settings:"Settings",users:"User Management"};
-const DEFAULT_USER_PERMISSIONS=["dashboard","projects","opportunities"];
-const ALL_PERMISSIONS=Object.keys(MENU_PERMISSIONS);
+let rows=[], filtered=[], opportunities={}, products=[], history=[], currentUser=null;
 
 
 const wasteWords=["waste","solid waste","biodegradable","non-biodegradable","garbage","sanitation","compost","composting","haritha","haritha karma","harithakarmasena","hks","waste bin","waste bins","disposal","segregat","collection","processing","recycling","recycle","organic waste","bio bin","napkin","bottle booth","waste management","ശുചിത്വ","മാലിന്യ","ജൈവമാലിന്യ","അജൈവ","ഹരിതകർമ്മ","കമ്പോസ്റ്റ്","ബിൻ","ബിന്നുകൾ","പാഴ്വസ്തു","പാഴ്‌വസ്തു"];
@@ -250,9 +258,28 @@ function parseTSV(txt){
  .filter(r=>Object.values(r).some(v=>String(v).trim()));
 }
 
+function showSaveStatus(message,type="success"){
+ const el=document.getElementById("saveStatus");
+ if(!el)return;
+ el.className=`save-status show ${type}`;
+ el.innerHTML=message;
+}
+function showSaveToast(message,type="success"){
+ const el=document.getElementById("saveToast");
+ if(!el)return;
+ el.className=`save-toast show ${type}`;
+ el.textContent=message;
+ clearTimeout(window.__saveToastTimer);
+ if(type!=="saving")window.__saveToastTimer=setTimeout(()=>el.className="save-toast",4500);
+}
+function clearSaveStatus(){
+ const el=document.getElementById("saveStatus");
+ if(el)el.className="save-status";
+}
+
 async function processData(){
  const incoming=parseTSV(document.getElementById("paste").value).map(r=>({...r,...classify(r)}));
- if(!incoming.length){document.getElementById("msg").textContent="No rows detected.";return}
+ if(!incoming.length){document.getElementById("msg").textContent="No rows detected.";clearSaveStatus();return false}
  const old=new Map(rows.map(r=>[keyOf(r),r]));
  let added=0,updated=0,dupes=0;
  incoming.forEach(r=>{
@@ -262,14 +289,52 @@ async function processData(){
  });
  rows=[...old.values()];
  history.unshift({date:new Date().toISOString(),source:"Excel Import",records:incoming.length,newCount:added,updated,duplicates:dupes});
- history=history.slice(0,30);await syncImportedRows(incoming, added, updated, dupes);
- document.getElementById("msg").textContent=`Imported ${incoming.length} rows • ${added} new • ${updated} updated • ${dupes} duplicate keys handled.`;
- populateDistricts();render();renderHistory();renderDashboard();renderOpportunities();
+ history=history.slice(0,30);
+ try{
+   showSaveStatus("⏳ Saving imported project data to database…","saving");
+   showSaveToast("Saving project data to database…","saving");
+   await syncImportedRows(incoming, added, updated, dupes);
+   document.getElementById("msg").textContent=`Imported ${incoming.length} rows • ${added} new • ${updated} updated • ${dupes} duplicate keys handled.`;
+   showSaveStatus(`✓ <strong>Project data saved successfully to the database.</strong><br>${incoming.length.toLocaleString()} records processed • ${added.toLocaleString()} new • ${updated.toLocaleString()} updated • ${dupes.toLocaleString()} duplicates handled.`);
+   showSaveToast(`✓ Project data saved successfully • ${incoming.length.toLocaleString()} records processed`);
+   populateDistricts();render();renderHistory();renderDashboard();renderOpportunities();
+   return true;
+ }catch(e){
+   console.error(e);
+   const msg=e.message||String(e);
+   document.getElementById("msg").textContent="Database save failed: "+msg;
+   showSaveStatus(`✕ <strong>Database save failed.</strong><br>${esc(msg)}<br><span style="font-weight:400">Please check your connection and try again.</span>`,"error");
+   showSaveToast("✕ Database save failed. Please try again.","error");
+   return false;
+ }
 }
 async function saveData(){
- if(!rows.length)await processData(); if(!rows.length)return;
- await syncImportedRows(rows,0,0,0);
- updateSavedInfo();document.getElementById("msg").textContent=`Saved ${rows.length} projects successfully to Supabase.`;
+ if(!currentUser){
+   showSaveStatus("✕ <strong>Please sign in first.</strong><br>You must be logged in before saving project data to Supabase.","error");
+   showSaveToast("✕ Please sign in first.","error");
+   return;
+ }
+ if(!rows.length){
+   const ok=await processData();
+   if(!ok)return;
+   return;
+ }
+ try{
+   showSaveStatus("⏳ Saving project data to database…","saving");
+   showSaveToast("Saving project data to database…","saving");
+   const count=rows.length;
+   await syncImportedRows(rows,0,0,0);
+   updateSavedInfo();
+   document.getElementById("msg").textContent=`Saved ${count} projects successfully to Supabase.`;
+   showSaveStatus(`✓ <strong>Project data saved successfully to the database.</strong><br>${count.toLocaleString()} projects are now saved in Supabase.`);
+   showSaveToast(`✓ ${count.toLocaleString()} projects saved successfully to the database`);
+ }catch(e){
+   console.error(e);
+   const msg=e.message||String(e);
+   document.getElementById("msg").textContent="Database save failed: "+msg;
+   showSaveStatus(`✕ <strong>Database save failed.</strong><br>${esc(msg)}<br><span style="font-weight:400">No success confirmation was shown because the database operation did not complete.</span>`,"error");
+   showSaveToast("✕ Database save failed. Please try again.","error");
+ }
 }
 async function loadSavedData(){
  try{
@@ -390,25 +455,10 @@ async function deleteOpportunity(encoded){const k=decodeURIComponent(encoded),r=
 
 function closeModal(){document.getElementById("modal").classList.remove("show")}
 
-
-async function getMyProfile(){if(!currentUser)return null;const {data,error}=await supabaseClient.from("profiles").select("id,username,name,role,permissions").eq("id",currentUser.id).single();if(error)throw error;currentProfile=data;return data;}
-function isAdmin(){return currentProfile?.role==="Admin";}
-function hasPermission(key){return isAdmin()||(Array.isArray(currentProfile?.permissions)&&currentProfile.permissions.includes(key));}
-function applyAccessControl(){document.querySelectorAll("[data-permission]").forEach(el=>el.classList.toggle("hidden",!hasPermission(el.dataset.permission)));document.querySelectorAll("[data-admin-only]").forEach(el=>el.classList.toggle("hidden",!isAdmin()));const b=document.getElementById("userBadge");if(b)b.textContent=currentProfile?(currentProfile.name||currentProfile.username)+" • "+currentProfile.role:"";}
-function permissionCheckboxes(containerId,selected){const c=document.getElementById(containerId);if(!c)return;c.innerHTML=ALL_PERMISSIONS.map(k=>'<label style="display:inline-flex;align-items:center;gap:5px;background:#f8fafc;border:1px solid #e2e8f0;padding:7px 9px;border-radius:8px"><input type="checkbox" value="'+k+'" '+(selected.includes(k)?"checked":"")+' style="width:auto"> '+MENU_PERMISSIONS[k]+'</label>').join("");}
-function selectedPermissions(containerId){return [...document.querySelectorAll("#"+containerId+" input[type=checkbox]:checked")].map(x=>x.value);}
-async function adminApi(payload){const {data:{session}}=await supabaseClient.auth.getSession();if(!session)throw new Error("Session expired. Please sign in again.");const {data,error}=await supabaseClient.functions.invoke("admin-user-management",{body:payload});if(error)throw error;if(data?.error)throw new Error(data.error);return data;}
-async function loadUsers(){if(!isAdmin())return;const {data,error}=await supabaseClient.from("profiles").select("id,username,name,role,permissions").order("name");if(error){document.getElementById("userMsg").textContent=error.message;return;}users=data||[];renderUsers();permissionCheckboxes("newUserPermissions",DEFAULT_USER_PERMISSIONS);}
-function renderUsers(){const body=document.getElementById("usersBody");if(!body)return;body.innerHTML=users.map(u=>'<tr><td>'+esc(u.name||"")+'</td><td>'+esc(u.username||"")+'</td><td><span class="badge '+(u.role==="Admin"?"purchase":"saved")+'">'+esc(u.role)+'</span></td><td>'+((u.permissions||[]).map(p=>'<span class="badge other">'+esc(MENU_PERMISSIONS[p]||p)+'</span>').join(" ")||'<span class="small">No menu access</span>')+'</td><td><button class="secondary" onclick="editUser(\''+u.id+'\')">Edit</button> <button class="danger" onclick="removeUser(\''+u.id+'\')">Delete</button></td></tr>').join("")||'<tr><td colspan="5" class="empty">No users found.</td></tr>';}
-function editUser(id){const u=users.find(x=>x.id===id);if(!u)return;const name=prompt("Full name:",u.name||"");if(name===null)return;const username=prompt("Username:",u.username||"");if(username===null)return;const role=prompt("Role (User/Admin):",u.role||"User");if(role===null)return;const pass=prompt("New password (leave blank to keep current):","");const perms=prompt("Menu permissions, comma separated:",(u.permissions||[]).join(","));if(perms===null)return;adminApi({action:"update",user_id:id,name,username,role:role==="Admin"?"Admin":"User",password:pass,permissions:perms.split(",").map(x=>x.trim()).filter(Boolean)}).then(()=>{document.getElementById("userMsg").textContent="User updated.";loadUsers();}).catch(e=>document.getElementById("userMsg").textContent=e.message);}
-async function createUser(){const msg=document.getElementById("userMsg");try{msg.textContent="Creating user...";const payload={action:"create",name:document.getElementById("newUserName").value.trim(),username:document.getElementById("newUserUsername").value.trim(),email:document.getElementById("newUserEmail").value.trim(),password:document.getElementById("newUserPassword").value,role:document.getElementById("newUserRole").value,permissions:selectedPermissions("newUserPermissions")};if(payload.role==="Admin")payload.permissions=ALL_PERMISSIONS;await adminApi(payload);msg.textContent="User created successfully.";["newUserName","newUserUsername","newUserEmail","newUserPassword"].forEach(id=>document.getElementById(id).value="");document.getElementById("newUserRole").value="User";permissionCheckboxes("newUserPermissions",DEFAULT_USER_PERMISSIONS);await loadUsers();}catch(e){msg.textContent=e.message||String(e);}}
-async function removeUser(id){const u=users.find(x=>x.id===id);if(!u)return;if(!confirm("Delete "+(u.name||u.username)+"? This removes the login account."))return;try{await adminApi({action:"delete",user_id:id});document.getElementById("userMsg").textContent="User deleted.";await loadUsers();}catch(e){document.getElementById("userMsg").textContent=e.message||String(e);}}
-async function signOut(){await supabaseClient.auth.signOut();}
-
 function showLogin(){document.getElementById("loginOverlay").classList.add("show");document.getElementById("loginMsg").textContent="Please sign in to use the cloud database."}
 function hideLogin(){document.getElementById("loginOverlay").classList.remove("show")}
 async function signIn(){const email=document.getElementById("loginEmail").value.trim(),password=document.getElementById("loginPassword").value;if(!email||!password)return;document.getElementById("loginMsg").textContent="Signing in...";const {error}=await supabaseClient.auth.signInWithPassword({email,password});document.getElementById("loginMsg").textContent=error?error.message:"Signed in."}
-function showSection(id,btn){if(!hasPermission(id)){alert("You do not have access to this menu.");return;}document.querySelectorAll(".wrap>section").forEach(x=>x.classList.add("hidden"));const section=document.getElementById(id);if(!section)return;section.classList.remove("hidden");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");if(id==="dashboard")renderDashboard();if(id==="opportunities")renderOpportunities();if(id==="reports")renderReports();if(id==="products")renderProducts();if(id==="import")renderHistory();if(id==="users")loadUsers()}
+function showSection(id,btn){document.querySelectorAll(".wrap>section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));btn.classList.add("active");if(id==="dashboard")renderDashboard();if(id==="opportunities")renderOpportunities();if(id==="reports")renderReports();if(id==="products")renderProducts();if(id==="import")renderHistory()}
 
 function renderDashboard(){
  const counts={WASTE:0,PURCHASE:0,EQUIPMENT:0,OTHER:0};rows.forEach(r=>counts[r.type]++);
@@ -456,8 +506,12 @@ async function loadSample(){
 336\tWASTE BINS FOR SEGREGATING WASTE AT THE COMMUNITY LEVEL\tകമ്മ്യൂണിറ്റി തലത്തിൽ മാലിന്യങ്ങൾ തരംതിരിക്കുന്നതിനുള്ള ബിന്നുകൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tCollection and Transport\tApproved\t300000\t300000`;
  document.getElementById("paste").value=sample;processData()
 }
-async function initApp(){const {data:{session}}=await supabaseClient.auth.getSession();currentUser=session?.user||null;if(!currentUser){currentProfile=null;applyAccessControl();showLogin();return;}try{await getMyProfile();hideLogin();applyAccessControl();await loadSavedData();permissionCheckboxes("newUserPermissions",DEFAULT_USER_PERMISSIONS);}catch(e){console.error(e);document.getElementById("loginMsg").textContent="Profile access failed: "+(e.message||e);await supabaseClient.auth.signOut();}}
-supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser)setTimeout(()=>initApp(),0);else{currentProfile=null;applyAccessControl();showLogin();}});
+async function initApp(){
+ const {data:{session}}=await supabaseClient.auth.getSession();currentUser=session?.user||null;
+ if(!currentUser){showLogin();return;}
+ hideLogin();await loadSavedData();
+}
+supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser)initApp();else showLogin();});
 initApp();
 </script>
 </body>
