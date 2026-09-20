@@ -131,7 +131,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
       <h3 style="margin:0">Matching Projects</h3><span id="shown" class="small">0 results</span>
     </div>
     <div class="tablewrap"><table><thead><tr>
-      <th>View</th><th>Score</th><th>Opportunity</th><th>Project No</th><th>Project Name</th><th>Local Body</th><th>District</th><th>Sector</th><th>Sub Sector</th><th>Status</th><th>Fund Total</th><th>Balance</th><th>Matched Keywords</th>
+      <th>View</th><th>Score</th><th>Opportunity</th><th>Project No</th><th>Impl Code</th><th>Project Name</th><th>Local Body</th><th>District</th><th>Sector</th><th>Sub Sector</th><th>Status</th><th>Fund Total</th><th>Balance</th><th>Matched Keywords</th>
     </tr></thead><tbody id="tbody"></tbody></table></div>
   </section>
 </section>
@@ -225,7 +225,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
    2. Extensions -> Apps Script, paste the code from Code.gs (provided separately), set your PASSWORD, Save.
    3. Deploy -> New deployment -> Web app -> Execute as: Me -> Who has access: Anyone -> Deploy.
    4. Copy the Web App URL and paste it below. */
-const GAS_URL="https://script.google.com/macros/s/AKfycbz8VGdjB-N2nV9zvHOYgP8NAUz9y6U4XVUOnzGzjIKKOVypk-DDE5JnWIOMoIERFOWpyA/exec";
+const GAS_URL="https://script.google.com/macros/s/AKfycbwpY93CZiyemq9eao-td5-hEjwSFN29BvLbtN1iL8TE1fCooJC2x9M88lwsn5Mw3pkjLg/exec";
 
 async function api(action,payload){
  payload=payload||{};
@@ -378,8 +378,8 @@ async function syncImportedRows(incoming){
  await api("addHistory",{entry:{date:new Date().toISOString(),source:source,records:incoming.length,newCount:newCount,updated:updatedCount,duplicates:duplicateCount}});
  await loadSavedData();
 }
-function rowToDb(r){return {project_no:String(r["Project No"]||""),project_name_eng:r["Project Name Eng"]||"",project_name_mal:r["Project Name Mal"]||"",lb_name:r["LB Name"]||"",lb_type:r["LB Type"]||"",district:r["District"]||"",sector:r["Sector"]||"",sub_sector:r["Sub Sector"]||"",source_status:r["Status"]||"",fund_total:money(r["FundTotal"]),expenditure:money(r["Expenditure"]),balance:money(r["Balance"]),project_date:r["Project Date"]||"",closing_date:r["Closing Date"]||"",opportunity_score:Number(r.score||0),opportunity_type:r.type||"OTHER",matched_keywords:r.hits||[],raw_data:r};}
-function dbToRow(d){const r={...(d.raw_data||{}),"Project No":d.project_no,"Project Name Eng":d.project_name_eng,"Project Name Mal":d.project_name_mal,"LB Name":d.lb_name,"LB Type":d.lb_type,"District":d.district,"Sector":d.sector,"Sub Sector":d.sub_sector,"Status":d.source_status,"FundTotal":d.fund_total,"Expenditure":d.expenditure,"Balance":d.balance,"Project Date":d.project_date,"Closing Date":d.closing_date,score:Number(d.opportunity_score||0),type:d.opportunity_type||"OTHER",hits:d.matched_keywords||[]};r._dbId=d.id;return r;}
+function rowToDb(r){return {project_no:String(r["Project No"]||""),impl_code:r["Impl Code"]||"",project_name_eng:r["Project Name Eng"]||"",project_name_mal:r["Project Name Mal"]||"",lb_name:r["LB Name"]||"",lb_type:r["LB Type"]||"",district:r["District"]||"",sector:r["Sector"]||"",sub_sector:r["Sub Sector"]||"",source_status:r["Status"]||"",fund_total:money(r["FundTotal"]),expenditure:money(r["Expenditure"]),balance:money(r["Balance"]),project_date:r["Project Date"]||"",closing_date:r["Closing Date"]||"",opportunity_score:Number(r.score||0),opportunity_type:r.type||"OTHER",matched_keywords:r.hits||[],raw_data:r};}
+function dbToRow(d){const r={...(d.raw_data||{}),"Project No":d.project_no,"Impl Code":d.impl_code,"Project Name Eng":d.project_name_eng,"Project Name Mal":d.project_name_mal,"LB Name":d.lb_name,"LB Type":d.lb_type,"District":d.district,"Sector":d.sector,"Sub Sector":d.sub_sector,"Status":d.source_status,"FundTotal":d.fund_total,"Expenditure":d.expenditure,"Balance":d.balance,"Project Date":d.project_date,"Closing Date":d.closing_date,score:Number(d.opportunity_score||0),type:d.opportunity_type||"OTHER",hits:d.matched_keywords||[]};r._dbId=d.id;return r;}
 
 function populateDistricts(){
  const d=[...new Set(rows.map(r=>r["District"]).filter(Boolean))].sort();
@@ -419,10 +419,10 @@ function render(){
    const name=r["Project Name Eng"]&&r["Project Name Mal"]?`${esc(r["Project Name Eng"])}<br><span class="small">${esc(r["Project Name Mal"])}</span>`:esc(r["Project Name Eng"]||r["Project Name Mal"]||"");
    return `<tr><td><button class="secondary" onclick="viewProject(${rows.indexOf(r)})">👁 View</button></td>
    <td class="score ${cls}">${r.score}%</td><td><span class="badge ${r.type.toLowerCase()}">${categoryNames[r.type]}</span>${op.status?`<span class="badge saved">${esc(op.status)}</span>`:""}</td>
-   <td>${esc(r["Project No"])}</td><td>${name}</td><td>${esc(r["LB Name"])}</td><td>${esc(r["District"])}</td><td>${esc(r["Sector"])}</td><td>${esc(r["Sub Sector"])}</td><td>${esc(op.status||"New")}</td>
+   <td>${esc(r["Project No"])}</td><td>${esc(r["Impl Code"])}</td><td>${name}</td><td>${esc(r["LB Name"])}</td><td>${esc(r["District"])}</td><td>${esc(r["Sector"])}</td><td>${esc(r["Sub Sector"])}</td><td>${esc(op.status||"New")}</td>
    <td>₹${money(r["FundTotal"]).toLocaleString("en-IN")}</td><td>₹${money(r["Balance"]).toLocaleString("en-IN")}</td>
    <td>${r.hits.map(x=>`<span class="badge other">${esc(x)}</span>`).join(" ")}</td></tr>`
- }).join(""):'<tr><td colspan="13" class="empty">No matching projects found.</td></tr>';
+ }).join(""):'<tr><td colspan="14" class="empty">No matching projects found.</td></tr>';
 }
 function resetFilters(){["search","fromDate","toDate"].forEach(id=>document.getElementById(id).value="");document.getElementById("type").value="ALL";document.getElementById("district").value="";document.getElementById("localbody").value="";document.getElementById("minscore").value="0";document.getElementById("projectStatus").value="";populateDistricts();render()}
 function quickDate(v){
@@ -438,7 +438,7 @@ function quickDate(v){
 function viewProject(index){
  const r=rows[index],k=keyOf(r),op=opportunities[k]||{};
  const productMatches=products.filter(p=>p.keywords.split(",").some(x=>norm(Object.values(r).join(" ")).includes(norm(x)))).map(p=>p.name);
- const fields=["Project No","Project Name Eng","Project Name Mal","LB Name","LB Type","District","Sector","Sub Sector","Status","FundTotal","Expenditure","Balance","Project Date","Closing Date"];
+ const fields=["Project No","Impl Code","Project Name Eng","Project Name Mal","LB Name","LB Type","District","Sector","Sub Sector","Status","FundTotal","Expenditure","Balance","Project Date","Closing Date"];
  document.getElementById("modalTitle").textContent=r["Project Name Eng"]||"Project Details";
  document.getElementById("modalBody").innerHTML=`
  <div class="detailgrid">${fields.filter(f=>r[f]!==undefined).map(f=>`<div class="detail"><b>${esc(f)}</b>${esc(r[f])}</div>`).join("")}
@@ -538,7 +538,7 @@ function renderReports(){
 }
 function exportCSV(){
  if(!filtered.length)filtered=rows;
- const cols=["score","type","Project No","Project Name Eng","Project Name Mal","LB Name","LB Type","District","Sector","Sub Sector","Status","FundTotal","Expenditure","Balance","hits"];
+ const cols=["score","type","Project No","Impl Code","Project Name Eng","Project Name Mal","LB Name","LB Type","District","Sector","Sub Sector","Status","FundTotal","Expenditure","Balance","hits"];
  let out=[cols.join(",")];filtered.forEach(r=>out.push(cols.map(c=>`"${String(c==="hits"?r.hits.join("; "):(r[c]??"")).replace(/"/g,'""')}"`).join(",")));
  downloadBlob(out.join("\n"),"JAYS_Project_Opportunities.csv","text/csv;charset=utf-8")
 }
@@ -549,11 +549,11 @@ async function restoreJSON(input){const f=input.files[0];if(!f||!currentUser)ret
 function downloadBlob(data,name,type){const blob=new Blob([data],{type}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function clearAll(){document.getElementById("paste").value="";rows=[];filtered=[];populateDistricts();render();renderDashboard();renderOpportunities()}
 async function loadSample(){
- const sample=`Project No\tProject Name Eng\tProject Name Mal\tLB Name\tDistrict\tSector\tSub Sector\tStatus\tFundTotal\tBalance
-27\tProtective equipments to HKS\tഹരിത കർമ്മസേനയ്ക്ക് സുരക്ഷാ ഉപകരണങ്ങൾ\tSample Panchayat\tKozhikode\tSolid Waste Management\tProcessing\tApproved\t100000\t100000
-50\tExporting Non-Biodegradable Waste collected from Wards\tവാർഡുകളിൽ നിന്ന് ശേഖരിക്കുന്ന അജൈവ പാഴ്‌വസ്തുക്കൾ കയറ്റി അയക്കൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tDisposal\tApproved\t100000\t100000
-52\tSupplying of Ring compost unit for solid biodegradable waste management at houses\tവീടുകളിലെ ഖരജൈവമാലിന്യ സംസ്കരണത്തിന് റിംഗ് കമ്പോസ്റ്റ് യൂണിറ്റ് വാങ്ങി നൽകൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tProcessing\tApproved\t555500\t555500
-85\tPurchasing Kitchen Utensils for Anganvadies\tഅംഗൻവാടികൾക്ക് അടുക്കള പാത്രങ്ങൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tAnganwadies\tFacilities\tApproved\t90000\t90000
+ const sample=`Project No\tImpl Code\tProject Name Eng\tProject Name Mal\tLB Name\tDistrict\tSector\tSub Sector\tStatus\tFundTotal\tBalance
+27\tIC-27\tProtective equipments to HKS\tഹരിത കർമ്മസേനയ്ക്ക് സുരക്ഷാ ഉപകരണങ്ങൾ\tSample Panchayat\tKozhikode\tSolid Waste Management\tProcessing\tApproved\t100000\t100000
+50\tIC-50\tExporting Non-Biodegradable Waste collected from Wards\tവാർഡുകളിൽ നിന്ന് ശേഖരിക്കുന്ന അജൈവ പാഴ്‌വസ്തുക്കൾ കയറ്റി അയക്കൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tDisposal\tApproved\t100000\t100000
+52\tIC-52\tSupplying of Ring compost unit for solid biodegradable waste management at houses\tവീടുകളിലെ ഖരജൈവമാലിന്യ സംസ്കരണത്തിന് റിംഗ് കമ്പോസ്റ്റ് യൂണിറ്റ് വാങ്ങി നൽകൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tProcessing\tApproved\t555500\t555500
+85\tIC-85\tPurchasing Kitchen Utensils for Anganvadies\tഅംഗൻവാടികൾക്ക് അടുക്കള പാത്രങ്ങൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tAnganwadies\tFacilities\tApproved\t90000\t90000
 100\tPurchase Disaster management Equipments\tദുരന്ത നിവാരണ ഉപകരണങ്ങൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tSocial Welfare\tSocial Security\tApproved\t100000\t100000
 336\tWASTE BINS FOR SEGREGATING WASTE AT THE COMMUNITY LEVEL\tകമ്മ്യൂണിറ്റി തലത്തിൽ മാലിന്യങ്ങൾ തരംതിരിക്കുന്നതിനുള്ള ബിന്നുകൾ വാങ്ങൽ\tSample Panchayat\tKozhikode\tSolid Waste Management\tCollection and Transport\tApproved\t300000\t300000`;
  document.getElementById("paste").value=sample;processData()
