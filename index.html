@@ -207,7 +207,7 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
 
 </div>
 
-<div id="loginOverlay" class="modal show" style="z-index:2000"><div class="modalbox" style="max-width:420px"><h2>🔐 JAYS Opportunity Finder</h2><p class="small">Sign in with your JAYS Supabase account.</p><input id="loginEmail" type="email" placeholder="Email" style="width:100%;margin:7px 0"><input id="loginPassword" type="password" placeholder="Password" style="width:100%;margin:7px 0"><button class="green" style="width:100%;margin-top:8px" onclick="signIn()">Sign In</button><div id="loginMsg" class="small" style="margin-top:10px"></div></div></div>
+<div id="loginOverlay" class="modal show" style="z-index:2000"><div class="modalbox" style="max-width:420px"><h2>🔐 JAYS Opportunity Finder</h2><p class="small">Enter your team password to access the shared Google Sheets database.</p><input id="loginPassword" type="password" placeholder="Team Password" style="width:100%;margin:7px 0" onkeydown="if(event.key==='Enter')signIn()"><button class="green" style="width:100%;margin-top:8px" onclick="signIn()">Sign In</button><div id="loginMsg" class="small" style="margin-top:10px"></div></div></div>
 <div id="saveToast" class="save-toast" role="status" aria-live="polite"></div>
 <div id="modal" class="modal" onclick="if(event.target===this)closeModal()">
  <div class="modalbox">
@@ -219,11 +219,24 @@ th{background:#f8fafc;position:sticky;top:0;z-index:1;font-size:10px;text-transf
  </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL="https://ufpaxvflwaqesdueqiob.supabase.co";
-const SUPABASE_KEY="sb_publishable_wcFe5caMkBlV-BcaZRgt7Q_YRdXAanu";
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+/* ===== GOOGLE SHEETS DATABASE BRIDGE =====
+   1. Create a Google Sheet.
+   2. Extensions -> Apps Script, paste the code from Code.gs (provided separately), set your PASSWORD, Save.
+   3. Deploy -> New deployment -> Web app -> Execute as: Me -> Who has access: Anyone -> Deploy.
+   4. Copy the Web App URL and paste it below. */
+const GAS_URL=https://script.google.com/macros/s/AKfycbyuwsDK4K1A4fIbBS-bhyiuL0TE-3OeJaz0GopUkYBQpLTxIHWkieuAO3Q_pJ9IUUgeOA/exec;
+
+async function api(action,payload){
+ payload=payload||{};
+ const body=JSON.stringify(Object.assign({action:action,password:sessionStorage.getItem("jaysPwd")||""},payload));
+ const res=await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:body});
+ if(!res.ok)throw new Error("Server error ("+res.status+")");
+ const data=await res.json();
+ if(data&&data.error)throw new Error(data.error);
+ return data;
+}
+
 let rows=[], filtered=[], opportunities={}, products=[], history=[], currentUser=null;
 
 
@@ -310,7 +323,7 @@ async function processData(){
 }
 async function saveData(){
  if(!currentUser){
-   showSaveStatus("✕ <strong>Please sign in first.</strong><br>You must be logged in before saving project data to Supabase.","error");
+   showSaveStatus("✕ <strong>Please sign in first.</strong><br>You must be logged in before saving project data to Google Sheets.","error");
    showSaveToast("✕ Please sign in first.","error");
    return;
  }
@@ -320,58 +333,53 @@ async function saveData(){
    return;
  }
  try{
-   showSaveStatus("⏳ Saving project data to database…","saving");
-   showSaveToast("Saving project data to database…","saving");
+   showSaveStatus("⏳ Saving project data to Google Sheets…","saving");
+   showSaveToast("Saving project data to Google Sheets…","saving");
    const count=rows.length;
    await syncImportedRows(rows,0,0,0);
    updateSavedInfo();
-   document.getElementById("msg").textContent=`Saved ${count} projects successfully to Supabase.`;
-   showSaveStatus(`✓ <strong>Project data saved successfully to the database.</strong><br>${count.toLocaleString()} projects are now saved in Supabase.`);
-   showSaveToast(`✓ ${count.toLocaleString()} projects saved successfully to the database`);
+   document.getElementById("msg").textContent=`Saved ${count} projects successfully to Google Sheets.`;
+   showSaveStatus(`✓ <strong>Project data saved successfully to Google Sheets.</strong><br>${count.toLocaleString()} projects are now saved.`);
+   showSaveToast(`✓ ${count.toLocaleString()} projects saved successfully`);
  }catch(e){
    console.error(e);
    const msg=e.message||String(e);
    document.getElementById("msg").textContent="Database save failed: "+msg;
-   showSaveStatus(`✕ <strong>Database save failed.</strong><br>${esc(msg)}<br><span style="font-weight:400">No success confirmation was shown because the database operation did not complete.</span>`,"error");
+   showSaveStatus(`✕ <strong>Database save failed.</strong><br>${esc(msg)}<br><span style="font-weight:400">No success confirmation was shown because the save did not complete.</span>`,"error");
    showSaveToast("✕ Database save failed. Please try again.","error");
  }
 }
 async function loadSavedData(){
  try{
-  const {data,error}=await supabaseClient.from("opportunity_projects").select("*").order("updated_at",{ascending:false});
-  if(error)throw error;
-  rows=(data||[]).map(dbToRow);
-  const {data:ops,error:oe}=await supabaseClient.from("opportunity_records").select("*, profiles(username,name)").eq("saved_by",currentUser.id);
-  if(oe)throw oe;
-  opportunities={};(ops||[]).forEach(o=>{const r=rows.find(x=>x._dbId===o.project_id);if(r)opportunities[keyOf(r)]={...o,staff:o.profiles?.name||o.profiles?.username||"",followup:o.followup_date||""};});
-  const {data:ps,error:pe}=await supabaseClient.from("opportunity_products").select("*").order("name"); if(pe)throw pe; products=ps||[];
-  const {data:hs,error:he}=await supabaseClient.from("opportunity_import_history").select("*").order("imported_at",{ascending:false}).limit(30); if(he)throw he; history=hs||[];
+  const data=await api("getAll");
+  rows=(data.projects||[]).map(dbToRow);
+  opportunities={};(data.opportunities||[]).forEach(o=>{const r=rows.find(x=>x._dbId===o.project_id);if(r)opportunities[keyOf(r)]={...o,followup:o.followup_date||""};});
+  products=data.products||[];
+  history=(data.history||[]).map(h=>({date:h.date,source:h.source,records:h.records,newCount:h.new_count,updated:h.updated_count,duplicates:h.duplicate_count}));
   populateDistricts();render();renderDashboard();renderOpportunities();renderProducts();renderHistory();updateSavedInfo();
-  document.getElementById("msg").textContent=`Loaded ${rows.length} projects from Supabase.`;
- }catch(e){console.error(e);document.getElementById("msg").textContent="Supabase load failed: "+(e.message||e);}
+  document.getElementById("msg").textContent=`Loaded ${rows.length} projects from Google Sheets.`;
+ }catch(e){console.error(e);document.getElementById("msg").textContent="Google Sheets load failed: "+(e.message||e);throw e;}
 }
-function updateSavedInfo(){document.getElementById("savedInfo").textContent=currentUser?`Cloud database: Supabase • ${rows.length} projects`:`Cloud database: Sign in required`}
+function updateSavedInfo(){document.getElementById("savedInfo").textContent=currentUser?`Cloud database: Google Sheets • ${rows.length} projects`:`Cloud database: Sign in required`}
 async function syncImportedRows(incoming){
  if(!currentUser)throw new Error("Please sign in first.");
  if(!Array.isArray(incoming)||!incoming.length)return;
  const source="Excel Import";
  const newCount=arguments[1]||0, updatedCount=arguments[2]||0, duplicateCount=arguments[3]||0;
- const CHUNK_SIZE=500;
+ const CHUNK_SIZE=300;
  for(let i=0;i<incoming.length;i+=CHUNK_SIZE){
    const chunk=incoming.slice(i,i+CHUNK_SIZE);
    const payload=chunk.map(rowToDb);
-   const {data,error}=await supabaseClient.from("opportunity_projects").upsert(payload,{onConflict:"project_no,lb_name"}).select("id,project_no,lb_name");
-   if(error)throw error;
-   const idByKey=new Map((data||[]).map(x=>[`${x.project_no}\u001f${x.lb_name||""}`,x.id]));
-   chunk.forEach(r=>{const id=idByKey.get(keyOf(r));if(id)r._dbId=id;});
-   showSaveStatus(`⏳ Saving project data to database…<br>${Math.min(i+chunk.length,incoming.length).toLocaleString()} / ${incoming.length.toLocaleString()} records processed`,'saving');
+   const res=await api("saveProjects",{rows:payload});
+   const idMap=res.idMap||{};
+   chunk.forEach(r=>{const id=idMap[keyOf(r)];if(id)r._dbId=id;});
+   showSaveStatus(`⏳ Saving project data to Google Sheets…<br>${Math.min(i+chunk.length,incoming.length).toLocaleString()} / ${incoming.length.toLocaleString()} records processed`,'saving');
  }
- const {error:he}=await supabaseClient.from("opportunity_import_history").insert({source,records:incoming.length,new_count:newCount,updated_count:updatedCount,duplicate_count:duplicateCount,imported_by:currentUser.id});
- if(he)throw he;
+ await api("addHistory",{entry:{date:new Date().toISOString(),source:source,records:incoming.length,newCount:newCount,updated:updatedCount,duplicates:duplicateCount}});
  await loadSavedData();
 }
-function rowToDb(r){return {project_no:String(r["Project No"]||""),project_name_eng:r["Project Name Eng"]||null,project_name_mal:r["Project Name Mal"]||null,lb_name:r["LB Name"]||null,lb_type:r["LB Type"]||null,district:r["District"]||null,sector:r["Sector"]||null,sub_sector:r["Sub Sector"]||null,source_status:r["Status"]||null,fund_total:money(r["FundTotal"]),expenditure:money(r["Expenditure"]),balance:money(r["Balance"]),project_date:r["Project Date"]||null,closing_date:r["Closing Date"]||null,opportunity_score:Number(r.score||0),opportunity_type:r.type||"OTHER",matched_keywords:r.hits||[],raw_data:r,created_by:currentUser?.id||null};}
-function dbToRow(d){const r={...(d.raw_data||{}),"Project No":d.project_no,"Project Name Eng":d.project_name_eng,"Project Name Mal":d.project_name_mal,"LB Name":d.lb_name,"LB Type":d.lb_type,"District":d.district,"Sector":d.sector,"Sub Sector":d.sub_sector,"Status":d.source_status,"FundTotal":d.fund_total,"Expenditure":d.expenditure,"Balance":d.balance,"Project Date":d.project_date,"Closing Date":d.closing_date,score:d.opportunity_score,type:d.opportunity_type,hits:d.matched_keywords||[]};r._dbId=d.id;return r;}
+function rowToDb(r){return {project_no:String(r["Project No"]||""),project_name_eng:r["Project Name Eng"]||"",project_name_mal:r["Project Name Mal"]||"",lb_name:r["LB Name"]||"",lb_type:r["LB Type"]||"",district:r["District"]||"",sector:r["Sector"]||"",sub_sector:r["Sub Sector"]||"",source_status:r["Status"]||"",fund_total:money(r["FundTotal"]),expenditure:money(r["Expenditure"]),balance:money(r["Balance"]),project_date:r["Project Date"]||"",closing_date:r["Closing Date"]||"",opportunity_score:Number(r.score||0),opportunity_type:r.type||"OTHER",matched_keywords:r.hits||[],raw_data:r};}
+function dbToRow(d){const r={...(d.raw_data||{}),"Project No":d.project_no,"Project Name Eng":d.project_name_eng,"Project Name Mal":d.project_name_mal,"LB Name":d.lb_name,"LB Type":d.lb_type,"District":d.district,"Sector":d.sector,"Sub Sector":d.sub_sector,"Status":d.source_status,"FundTotal":d.fund_total,"Expenditure":d.expenditure,"Balance":d.balance,"Project Date":d.project_date,"Closing Date":d.closing_date,score:Number(d.opportunity_score||0),type:d.opportunity_type||"OTHER",hits:d.matched_keywords||[]};r._dbId=d.id;return r;}
 
 function populateDistricts(){
  const d=[...new Set(rows.map(r=>r["District"]).filter(Boolean))].sort();
@@ -449,20 +457,48 @@ function viewProject(index){
 }
 async function saveOpportunity(encoded){
  const k=decodeURIComponent(encoded),r=rows.find(x=>keyOf(x)===k);if(!r||!currentUser)return;
- const existing=opportunities[k]||{};
- const payload={project_id:r._dbId,priority:document.getElementById("opPriority").value,status:document.getElementById("opStatus").value,followup_date:document.getElementById("opDate").value||null,notes:document.getElementById("opNotes").value,assigned_staff_id:null,contacted:!!document.getElementById("opContacted")?.checked,quotation_required:!!document.getElementById("opQuotation")?.checked,saved_by:currentUser.id};
- const staffName=document.getElementById("opStaff").value.trim();
- if(staffName){const {data}=await supabaseClient.from("profiles").select("id").or(`name.ilike.%${staffName}%,username.ilike.%${staffName}%`).limit(1);if(data?.[0])payload.assigned_staff_id=data[0].id;}
- const {error}=await supabaseClient.from("opportunity_records").upsert(payload,{onConflict:"project_id,saved_by"});if(error){alert(error.message);return;}
- await loadSavedData();closeModal();render();renderDashboard();renderOpportunities();
+ const payload={project_id:r._dbId,priority:document.getElementById("opPriority").value,status:document.getElementById("opStatus").value,followup_date:document.getElementById("opDate").value||"",notes:document.getElementById("opNotes").value,staff:document.getElementById("opStaff").value.trim(),contacted:!!document.getElementById("opContacted")?.checked,quotation_required:!!document.getElementById("opQuotation")?.checked};
+ try{
+   await api("saveOpportunity",{record:payload});
+   await loadSavedData();closeModal();render();renderDashboard();renderOpportunities();
+ }catch(e){alert(e.message);}
 }
-async function deleteOpportunity(encoded){const k=decodeURIComponent(encoded),r=rows.find(x=>keyOf(x)===k);if(!r||!currentUser)return;const {error}=await supabaseClient.from("opportunity_records").delete().eq("project_id",r._dbId).eq("saved_by",currentUser.id);if(error){alert(error.message);return;}delete opportunities[k];closeModal();await loadSavedData();render();renderDashboard();renderOpportunities()}
+async function deleteOpportunity(encoded){
+ const k=decodeURIComponent(encoded),r=rows.find(x=>keyOf(x)===k);if(!r||!currentUser)return;
+ try{
+   await api("deleteOpportunity",{projectId:r._dbId});
+   delete opportunities[k];closeModal();await loadSavedData();render();renderDashboard();renderOpportunities();
+ }catch(e){alert(e.message);}
+}
 
 function closeModal(){document.getElementById("modal").classList.remove("show")}
 
 function showLogin(){document.getElementById("loginOverlay").classList.add("show");document.getElementById("loginMsg").textContent="Please sign in to use the cloud database."}
 function hideLogin(){document.getElementById("loginOverlay").classList.remove("show")}
-async function signIn(){const email=document.getElementById("loginEmail").value.trim(),password=document.getElementById("loginPassword").value;if(!email||!password)return;document.getElementById("loginMsg").textContent="Signing in...";const {error}=await supabaseClient.auth.signInWithPassword({email,password});document.getElementById("loginMsg").textContent=error?error.message:"Signed in."}
+async function signIn(){
+ const password=document.getElementById("loginPassword").value;
+ if(!password)return;
+ document.getElementById("loginMsg").textContent="Signing in...";
+ try{
+   const data=await api2Login(password);
+   if(data.ok){
+     sessionStorage.setItem("jaysPwd",password);
+     currentUser=true;
+     document.getElementById("loginMsg").textContent="Signed in.";
+     hideLogin();
+     await loadSavedData();
+   } else {
+     document.getElementById("loginMsg").textContent="Incorrect password.";
+   }
+ }catch(e){
+   document.getElementById("loginMsg").textContent="Connection error: "+(e.message||e);
+ }
+}
+async function api2Login(password){
+ const res=await fetch(GAS_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"login",password:password})});
+ if(!res.ok)throw new Error("Server error ("+res.status+")");
+ return await res.json();
+}
 function showSection(id,btn){document.querySelectorAll(".wrap>section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));btn.classList.add("active");if(id==="dashboard")renderDashboard();if(id==="opportunities")renderOpportunities();if(id==="reports")renderReports();if(id==="products")renderProducts();if(id==="import")renderHistory()}
 
 function renderDashboard(){
@@ -478,9 +514,20 @@ function renderOpportunities(){
  Object.entries(opportunities).forEach(([k,o])=>{const r=rows.find(x=>keyOf(x)===k);if(r)groups[o.status||"New"].push({r,o})});
  document.getElementById("kanban").innerHTML=Object.entries(groups).map(([s,list])=>`<div class="kan"><h4>${s} <span class="small">(${list.length})</span></h4>${list.map(({r,o})=>`<div class="opp"><b>${esc(r["Project Name Eng"]||"Unnamed")}</b><div class="small">${esc(r["LB Name"])} • ${r.score}%</div>${o.followup?`<div class="small">📅 ${esc(o.followup)}</div>`:""}<button class="secondary" style="margin-top:6px" onclick="viewProject(${rows.indexOf(r)})">Open</button></div>`).join("")}</div>`).join("");
 }
-async function addProduct(){const name=document.getElementById("productName").value.trim(),keywords=document.getElementById("productKeywords").value.trim();if(!name||!keywords||!currentUser)return;const {error}=await supabaseClient.from("opportunity_products").insert({name,keywords,created_by:currentUser.id});if(error){alert(error.message);return;}document.getElementById("productName").value="";document.getElementById("productKeywords").value="";await loadSavedData();renderProducts()}
+async function addProduct(){
+ const name=document.getElementById("productName").value.trim(),keywords=document.getElementById("productKeywords").value.trim();
+ if(!name||!keywords||!currentUser)return;
+ try{
+   await api("addProduct",{name,keywords});
+   document.getElementById("productName").value="";document.getElementById("productKeywords").value="";
+   await loadSavedData();renderProducts();
+ }catch(e){alert(e.message);}
+}
 function renderProducts(){document.getElementById("productList").innerHTML=products.length?products.map((p,i)=>`<div class="opp"><b>${esc(p.name)}</b><div class="small">${esc(p.keywords)}</div><button class="danger" style="margin-top:5px" onclick="deleteProduct('${p.id||''}')">Delete</button></div>`).join(""):"<div class='small'>No products added yet.</div>"}
-async function deleteProduct(id){if(!id||!currentUser)return;const {error}=await supabaseClient.from("opportunity_products").delete().eq("id",id);if(error){alert(error.message);return;}await loadSavedData();renderProducts()}
+async function deleteProduct(id){
+ if(!id||!currentUser)return;
+ try{await api("deleteProduct",{id});await loadSavedData();renderProducts();}catch(e){alert(e.message);}
+}
 
 function renderHistory(){document.getElementById("history").innerHTML=history.map(h=>`<tr><td>${new Date(h.date).toLocaleString()}</td><td>${esc(h.source)}</td><td>${h.records}</td><td>${h.newCount}</td><td>${h.updated}</td><td>${h.duplicates}</td></tr>`).join("")||'<tr><td colspan="6" class="empty">No imports yet.</td></tr>'}
 function renderReports(){
@@ -497,7 +544,7 @@ function exportCSV(){
 }
 function exportOpportunities(){const arr=rows.filter(r=>opportunities[keyOf(r)]);filtered=arr;exportCSV()}
 function backupJSON(){downloadBlob(JSON.stringify({rows,opportunities,products,history,exportedAt:new Date().toISOString()},null,2),"JAYS_Project_Opportunity_Backup.json","application/json")}
-async function restoreJSON(input){const f=input.files[0];if(!f||!currentUser)return;const reader=new FileReader();reader.onload=async()=>{try{const x=JSON.parse(reader.result);if(Array.isArray(x.rows)&&x.rows.length){await syncImportedRows(x.rows,0,0,0)}alert("Backup imported into Supabase successfully.")}catch(e){alert("Invalid backup or import failed: "+e.message)}};reader.readAsText(f)}
+async function restoreJSON(input){const f=input.files[0];if(!f||!currentUser)return;const reader=new FileReader();reader.onload=async()=>{try{const x=JSON.parse(reader.result);if(Array.isArray(x.rows)&&x.rows.length){await syncImportedRows(x.rows,0,0,0)}alert("Backup imported into Google Sheets successfully.")}catch(e){alert("Invalid backup or import failed: "+e.message)}};reader.readAsText(f)}
 
 function downloadBlob(data,name,type){const blob=new Blob([data],{type}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function clearAll(){document.getElementById("paste").value="";rows=[];filtered=[];populateDistricts();render();renderDashboard();renderOpportunities()}
@@ -512,11 +559,11 @@ async function loadSample(){
  document.getElementById("paste").value=sample;processData()
 }
 async function initApp(){
- const {data:{session}}=await supabaseClient.auth.getSession();currentUser=session?.user||null;
- if(!currentUser){showLogin();return;}
- hideLogin();await loadSavedData();
+ const pwd=sessionStorage.getItem("jaysPwd");
+ if(!pwd){currentUser=null;showLogin();return;}
+ currentUser=true;hideLogin();
+ try{await loadSavedData();}catch(e){sessionStorage.removeItem("jaysPwd");currentUser=null;showLogin();}
 }
-supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser)initApp();else showLogin();});
 initApp();
 </script>
 </body>
